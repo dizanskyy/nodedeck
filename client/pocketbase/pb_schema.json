@@ -1,0 +1,46 @@
+[
+  {
+    "name": "teams",
+    "type": "base",
+    "listRule": "@request.auth.id != \"\" && (owner = @request.auth.id || id ?~ @collection.team_members.team.id)",
+    "viewRule": "@request.auth.id != \"\" && (owner = @request.auth.id || id ?~ @collection.team_members.team.id)",
+    "createRule": "@request.auth.id != \"\"",
+    "updateRule": "owner = @request.auth.id",
+    "deleteRule": "owner = @request.auth.id",
+    "fields": [
+      { "name": "name", "type": "text", "required": true },
+      { "name": "owner", "type": "relation", "required": true, "collectionId": "users", "maxSelect": 1 }
+    ]
+  },
+  {
+    "name": "team_members",
+    "type": "base",
+    "listRule": "@request.auth.id != \"\"",
+    "viewRule": "@request.auth.id != \"\"",
+    "createRule": "team.owner = @request.auth.id",
+    "updateRule": "team.owner = @request.auth.id",
+    "deleteRule": "team.owner = @request.auth.id",
+    "fields": [
+      { "name": "team", "type": "relation", "required": true, "collectionId": "teams", "maxSelect": 1, "cascadeDelete": true },
+      { "name": "user", "type": "relation", "required": false, "collectionId": "users", "maxSelect": 1 },
+      { "name": "email", "type": "text", "required": false },
+      { "name": "role", "type": "select", "required": true, "values": ["owner", "admin", "member"], "maxSelect": 1 },
+      { "name": "perms", "type": "select", "required": false, "values": ["view", "terminal", "files", "manage"], "maxSelect": 4 }
+    ]
+  },
+  {
+    "name": "team_servers",
+    "type": "base",
+    "listRule": "@request.auth.id != \"\"",
+    "viewRule": "@request.auth.id != \"\"",
+    "createRule": "@request.auth.id != \"\"",
+    "updateRule": "team.owner = @request.auth.id",
+    "deleteRule": "team.owner = @request.auth.id",
+    "fields": [
+      { "name": "team", "type": "relation", "required": true, "collectionId": "teams", "maxSelect": 1, "cascadeDelete": true },
+      { "name": "name", "type": "text", "required": true },
+      { "name": "host", "type": "text", "required": true },
+      { "name": "addedBy", "type": "relation", "required": true, "collectionId": "users", "maxSelect": 1 }
+    ]
+  }
+]

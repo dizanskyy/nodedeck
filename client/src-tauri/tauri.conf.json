@@ -1,0 +1,65 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "NodeDeck",
+  "version": "0.1.0",
+  "identifier": "io.nodedeck.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "NodeDeck",
+        "width": 1200,
+        "height": 780,
+        "minWidth": 900,
+        "minHeight": 560,
+        "resizable": true,
+        "decorations": true,
+        "theme": "Light",
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ws: wss: http: https:; img-src 'self' data: http: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/dizanskyy/nodedeck/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg1NzNERUEwRDgyN0RGMkIKUldRcjN5ZllvTjV6aGVhbDhWQXFDcW94amxZc3JBSzdMK1JDNC80SnB6aGg5RFdydnY3ZTV3QU8K"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ],
+    "copyright": "© 2026 NodeDeck",
+    "category": "DeveloperTool",
+    "shortDescription": "Удалённое управление и мониторинг серверов",
+    "longDescription": "NodeDeck — единая панель для управления серверами: терминал, файлы, мониторинг CPU/RAM, логи, Docker и systemd.",
+    "licenseFile": "../../LICENSE_EULA.txt",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Russian", "English"],
+        "displayLanguageSelector": true
+      },
+      "wix": {
+        "language": ["en-US"]
+      }
+    }
+  }
+}

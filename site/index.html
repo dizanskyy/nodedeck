@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="NodeDeck — удалённое управление хостингами в одной программе." />
+    <title>NodeDeck — контроль хостингов</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="NodeDeck — на главную"><span class="brand-mark">N/</span> NODEDECK</a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav">МЕНЮ <span>+</span></button>
+      <nav id="site-nav" class="site-nav" aria-label="Основная навигация">
+        <a href="#about">О программе</a>
+        <a href="#stats">Статистика</a>
+        <a href="#info">Информация</a>
+        <a href="#social">Соцсети</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">ПАНЕЛЬ УПРАВЛЕНИЯ / 01</p>
+          <h1 id="hero-title">ДЕРЖИТЕ<br />ХОСТИНГ<br /><em>ПОД РУКОЙ.</em></h1>
+          <p class="hero-text">NodeDeck — настольное приложение для тех, кому нужен прямой удалённый доступ к своему хостингу без лишних панелей и вкладок.</p>
+          <a class="button button-dark" href="#about">УЗНАТЬ О NODEDECK <span>↘</span></a>
+        </div>
+        <div class="terminal" aria-label="Демонстрация панели NodeDeck">
+          <div class="terminal-head"><span>NODEDECK / REMOTE</span><span>ONLINE</span></div>
+          <div class="terminal-main">
+            <div class="server-id">NODE<br /><b>01</b></div>
+            <div class="terminal-status"><span class="status-dot"></span> СОЕДИНЕНИЕ УСТАНОВЛЕНО</div>
+            <div class="terminal-grid">
+              <span>HOST</span><strong>MY-HOSTING-01</strong>
+              <span>UPTIME</span><strong>99.98%</strong>
+              <span>LOAD</span><strong>24%</strong>
+              <span>ACCESS</span><strong>REMOTE / ACTIVE</strong>
+            </div>
+          </div>
+          <div class="terminal-foot"><span>УПРАВЛЕНИЕ</span><span>● ● ●</span></div>
+        </div>
+      </section>
+
+      <section id="about" class="about section-block">
+        <div class="section-label"><span>01</span> О ПРОГРАММЕ</div>
+        <div class="about-content">
+          <h2>ВАШ ХОСТИНГ.<br />ОДНА ТОЧКА<br />КОНТРОЛЯ.</h2>
+          <div class="about-description">
+            <p>Добавьте хостинг в NodeDeck и управляйте его работой из приложения: следите за состоянием, подключайтесь удалённо и держите важные данные в одном месте.</p>
+            <p>Интерфейс построен вокруг действий, а не настроек. Открыли — увидели состояние — сделали нужное.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stats" class="stats section-block section-invert">
+        <div class="section-label"><span>02</span> СТАТИСТИКА</div>
+        <div class="stat-list">
+          <article><strong>01</strong><span>ОКНО ДЛЯ ВСЕХ<br />ВАШИХ ХОСТИНГОВ</span></article>
+          <article><strong>24/7</strong><span>ДОСТУП К СОСТОЯНИЮ<br />СЕРВЕРОВ</span></article>
+          <article><strong>0</strong><span>ЛИШНИХ ШАГОВ<br />ДО УПРАВЛЕНИЯ</span></article>
+        </div>
+      </section>
+
+      <section id="info" class="info section-block">
+        <div class="section-label"><span>03</span> ИНФОРМАЦИЯ</div>
+        <div class="info-layout">
+          <h2>КАК ЭТО<br />РАБОТАЕТ</h2>
+          <ol class="steps">
+            <li><span>1</span><div><b>СКАЧАЙТЕ NODEDECK</b><p>Установите приложение на свой компьютер.</p></div></li>
+            <li><span>2</span><div><b>ДОБАВЬТЕ ХОСТИНГ</b><p>Укажите данные доступа и создайте подключение.</p></div></li>
+            <li><span>3</span><div><b>УПРАВЛЯЙТЕ УДАЛЁННО</b><p>Контролируйте состояние и выполняйте нужные действия из одной панели.</p></div></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="development section-invert" aria-labelledby="dev-title">
+        <div><p class="eyebrow">СТАДИЯ РАЗРАБОТКИ</p><h2 id="dev-title">BUILDING<br />THE DECK.</h2></div>
+        <div class="dev-meta"><p>NodeDeck находится в активной разработке. Мы собираем основу, на которой будет удобно работать каждый день.</p><div class="progress" aria-label="Разработка: 62 процента"><div></div></div><b>ТЕКУЩАЯ ГОТОВНОСТЬ — 62%</b></div>
+      </section>
+
+      <section id="social" class="social section-block">
+        <div class="section-label"><span>04</span> СОЦСЕТИ</div>
+        <h2>СЛЕДИТЕ<br />ЗА СБОРОЙ<br />NODEDECK.</h2>
+        <div class="social-links">
+          <a href="#" aria-label="Telegram NodeDeck">TELEGRAM <span>↗</span></a>
+          <a href="#" aria-label="Discord NodeDeck">DISCORD <span>↗</span></a>
+          <a href="mailto:hello@nodedeck.app">EMAIL <span>↗</span></a>
+        </div>
+      </section>
+    </main>
+
+    <footer><span>NODEDECK © 2026</span><span>REMOTE HOSTING CONTROL</span><a href="#top">НАВЕРХ ↑</a></footer>
+    <script src="script.js"></script>
+  </body>
+</html>
