@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Server } from "../../../store";
-import { sshExec, credsOf, winCmd, type OsKind } from "../../../lib/ssh";
+import { sshExec, credsOf, winCmd, stripClixml, type OsKind } from "../../../lib/ssh";
 
 interface Snippet { label: string; cmd: string }
 
@@ -36,7 +36,7 @@ export function SnippetsPanel({ server, os }: { server: Server; os: OsKind }) {
     setBusy(true); setTitle(label); setOut("Выполняется…");
     try {
       const r = await sshExec(credsOf(server), cmd);
-      setOut((r.stdout || "") + (r.stderr ? "\n" + r.stderr : "") || "(нет вывода)");
+      setOut((stripClixml(r.stdout || "") + (r.stderr ? "\n" + stripClixml(r.stderr) : "")) || "(нет вывода)");
     } catch (e) { setOut("Ошибка: " + ((e as Error).message || String(e))); }
     setBusy(false);
   }

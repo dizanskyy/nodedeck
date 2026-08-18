@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Server } from "../../../store";
-import { sshExec, credsOf, winCmd, type OsKind } from "../../../lib/ssh";
+import { sshExec, credsOf, winCmd, stripClixml, type OsKind } from "../../../lib/ssh";
 import { IconRefresh } from "../../icons";
 
 interface Svc { name: string; status: string; display: string; running: boolean }
@@ -44,7 +44,7 @@ export function ServicesPanel({ server, os }: { server: Server; os: OsKind }) {
     setLoading(true); setErr(null);
     try {
       const r = await sshExec(credsOf(server), listCmd(os));
-      setSvcs(parse(r.stdout, os));
+      setSvcs(parse(stripClixml(r.stdout), os));
     } catch (e) { setErr((e as Error).message || String(e)); }
     setLoading(false);
   }

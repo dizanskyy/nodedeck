@@ -140,7 +140,7 @@ export const WINDOWS_METRICS_CMD = `powershell -NoProfile -EncodedCommand ${psEn
 export function parseWinMetrics(out: string): ParsedMetrics {
   const kv: Record<string, string> = {};
   const procs: ParsedMetrics["procs"] = [];
-  for (const line of out.split("\n")) {
+  for (const line of stripClixml(out).split("\n")) {
     const l = line.trim();
     if (l.startsWith("PROC=")) {
       const [pid, name, cpu, rss] = l.slice(5).split(",");
@@ -174,8 +174,22 @@ export async function detectOs(creds: SshCreds): Promise<OsKind> {
 }
 
 // Обернуть PowerShell-скрипт в запускаемую через SSH команду (без мучений с кавычками).
+// Гасим прогресс/ошибки, чтобы OpenSSH не заворачивал вывод в CLIXML.
 export function winCmd(script: string): string {
-  return `powershell -NoProfile -EncodedCommand ${psEncode(script)}`;
+  const wrapped = "$ProgressPreference='SilentlyContinue';$ErrorActionPreference='SilentlyContinue';[Console]::OutputEncoding=[Text.Encoding]::UTF8;" + script;
+  return `powershell -NoProfile -NonInteractive -EncodedCommand ${psEncode(wrapped)}`;
+}
+
+// PowerShell поверх OpenSSH иногда отдаёт вывод как CLIXML (#< CLIXML ... <S>строка</S>).
+// Вытаскиваем реальные строки, если такое пришло.
+export function stripClixml(s: string): string {
+  if (!s || !s.includes("CLIXML")) return s;
+  const parts = [...s.matchAll(/<S[^>]*>([\s\S]*?)<\/S>/g)].map((m) =>
+    m[1]
+      .replace(/_x000D_/g, "").replace(/_x000A_/g, "\n").replace(/_x0009_/g, "\t")
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+  );
+  return parts.join("\n");
 }
 
 // base64 <-> строка с корректной обработкой UTF-8.
@@ -193,7 +207,7 @@ export async function readFileText(creds: SshCreds, os: OsKind, path: string): P
     ? winCmd(`[Convert]::ToBase64String([IO.File]::ReadAllBytes('${path.replace(/'/g, "''")}'))`)
     : `base64 '${path.replace(/'/g, "")}'`;
   const r = await sshExec(creds, cmd);
-  const out = (r.stdout || "").trim();
+  const out = stripClixml(r.stdout || "").trim();
   if (!out && r.stderr) throw new Error(r.stderr.trim());
   return b64DecodeUtf8(out);
 }
@@ -202,10 +216,13 @@ export async function readFileText(creds: SshCreds, os: OsKind, path: string): P
 export async function writeFileText(creds: SshCreds, os: OsKind, path: string, content: string): Promise<void> {
   const b64 = b64EncodeUtf8(content);
   const cmd = os === "windows"
-    ? winCmd(`[IO.File]::WriteAllBytes('${path.replace(/'/g, "''")}',[Convert]::FromBase64String('${b64}'))`)
-    : `printf '%s' '${b64}' | base64 -d > '${path.replace(/'/g, "")}'`;
+    ? winCmd(`try { [IO.File]::WriteAllBytes('${path.replace(/'/g, "''")}',[Convert]::FromBase64String('${b64}')); 'NDOK' } catch { Write-Output ('NDERR: ' + $_.Exception.Message) }`)
+    : `printf '%s' '${b64}' | base64 -d > '${path.replace(/'/g, "")}' 2>&1`;
   const r = await sshExec(creds, cmd);
-  if (r.exit_code !== 0 && r.stderr) throw new Error(r.stderr.trim());
+  const out = stripClixml(r.stdout || "");
+  const marker = out.match(/NDERR:\s*(.+)/);
+  if (marker) throw new Error(marker[1].trim());
+  if (os !== "windows" && (r.stderr || out).trim()) throw new Error((r.stderr || out).trim());
 }
 
 export function credsOf(s: { host: string; port: number; username: string; authKind: "password" | "key"; password?: string; privateKey?: string }): SshCreds {

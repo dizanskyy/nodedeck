@@ -1,16 +1,1 @@
-const menuButton = document.querySelector('.menu-button');
-const navigation = document.querySelector('.site-nav');
-
-menuButton.addEventListener('click', () => {
-  const isOpen = navigation.classList.toggle('open');
-  menuButton.setAttribute('aria-expanded', String(isOpen));
-  menuButton.querySelector('span').textContent = isOpen ? '−' : '+';
-});
-
-navigation.querySelectorAll('a').forEach((link) => {
-  link.addEventListener('click', () => {
-    navigation.classList.remove('open');
-    menuButton.setAttribute('aria-expanded', 'false');
-    menuButton.querySelector('span').textContent = '+';
-  });
-});
+const icons={grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',server:'<rect x="4" y="3" width="16" height="7"/><rect x="4" y="14" width="16" height="7"/><path d="M7 6h.01M7 17h.01"/>',card:'<rect x="3" y="5" width="18" height="14"/><path d="M3 9h18"/>',terminal:'<rect x="3" y="4" width="18" height="16"/><path d="m7 9 3 3-3 3M13 15h4"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 3.4-6 8-6s7.2 2 8 6"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',contrast:'<circle cx="12" cy="12" r="8"/><path d="M12 4v16"/>',arrow:'<path d="M4 12h15M14 6l6 6-6 6"/>',chevron:'<path d="m9 5 7 7-7 7"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>'};document.querySelectorAll('[data-icon]').forEach(e=>e.innerHTML=`<svg viewBox="0 0 24 24">${icons[e.dataset.icon]}</svg>`);const crumb=document.getElementById('crumb');function go(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===v));document.querySelectorAll('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.view===v));crumb.textContent='/ '+({home:'ГЛАВНАЯ',servers:'СЕРВЕРЫ',subscriptions:'ПОДПИСКИ',commands:'КОМАНДЫ',profile:'ПРОФИЛЬ',account:'АККАУНТ'}[v]);document.querySelector('.sidebar').classList.remove('open')}document.querySelectorAll('[data-view]').forEach(e=>e.addEventListener('click',x=>{x.preventDefault();go(e.dataset.view)}));document.querySelector('.theme-toggle').onclick=()=>document.body.classList.toggle('invert');document.querySelector('.mobile-menu').onclick=()=>document.querySelector('.sidebar').classList.toggle('open');const auth=document.getElementById('auth');document.getElementById('registrationTrigger').onclick=()=>auth.classList.add('open');document.querySelector('.close-auth').onclick=()=>auth.classList.remove('open');document.querySelector('.auth-form').onsubmit=e=>{e.preventDefault();auth.classList.remove('open');go('home')};

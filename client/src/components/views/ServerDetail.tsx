@@ -193,7 +193,7 @@ function TerminalPane({ server }: { server: Server }) {
     const term = new Terminal({
       fontFamily: '"Cascadia Code", "JetBrains Mono", Consolas, monospace',
       fontSize: 13, cursorBlink: true,
-      theme: { background: "#ffffff", foreground: "#201e1d", cursor: "#0d0d0d", selectionBackground: "#e5e5e3", black: "#0d0d0d", brightBlack: "#7d7979", green: "#1f7a4d", red: "#8a1c10", white: "#605d5d" },
+      theme: { background: "#0a0a0a", foreground: "#eaeaea", cursor: "#ffffff", selectionBackground: "#2a2a2a", black: "#1a1a1a", brightBlack: "#666666", green: "#22c55e", red: "#ef4444", yellow: "#eab308", blue: "#60a5fa", white: "#dddddd", brightWhite: "#ffffff" },
     });
     const fit = new FitAddon();
     term.loadAddon(fit); term.open(host.current); fit.fit();

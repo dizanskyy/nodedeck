@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Server } from "../../../store";
-import { sshExec, credsOf, winCmd, readFileText, writeFileText, type OsKind } from "../../../lib/ssh";
+import { sshExec, credsOf, winCmd, readFileText, writeFileText, stripClixml, type OsKind } from "../../../lib/ssh";
 import { IconRefresh, IconTrash, IconPlus } from "../../icons";
 
 interface Entry { name: string; dir: boolean; size: number }
@@ -21,7 +21,8 @@ function parentOf(os: OsKind, path: string): string {
 
 function listCmd(os: OsKind, path: string): string {
   if (os === "windows") {
-    return winCmd(`Get-ChildItem -Force -LiteralPath '${path.replace(/'/g, "''")}' | ForEach-Object { "$([int]$_.PSIsContainer)|$($_.Length)|$($_.Name)" }`);
+    const p = path.replace(/'/g, "''");
+    return winCmd(`Get-ChildItem -Force -LiteralPath '${p}' -ErrorAction SilentlyContinue | ForEach-Object { Write-Output ("{0}|{1}|{2}" -f [int]$_.PSIsContainer, [int64]$_.Length, $_.Name) }`);
   }
   return `ls -Ap --group-directories-first '${path.replace(/'/g, "")}' 2>&1`;
 }
@@ -61,16 +62,18 @@ export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
   const [saving, setSaving] = useState(false);
   const [editErr, setEditErr] = useState<string | null>(null);
   const [newDir, setNewDir] = useState("");
+  const [raw, setRaw] = useState<string | null>(null);
 
   async function load(p = path) {
-    setLoading(true); setErr(null);
+    setLoading(true); setErr(null); setRaw(null);
     try {
       const r = await sshExec(credsOf(server), listCmd(os, p));
-      const parsed = parse(r.stdout, os);
-      if (parsed.length === 0 && r.stdout && /no such|not exist|cannot|denied|ошибка/i.test(r.stdout)) {
-        setErr(r.stdout.trim());
-      } else {
-        setEntries(parsed);
+      const parsed = parse(stripClixml(r.stdout), os);
+      setEntries(parsed);
+      // Если пусто — покажем реальный ответ сервера (ошибка доступа/путь/не та ОС).
+      if (parsed.length === 0) {
+        const info = (stripClixml(r.stdout) + (r.stderr ? "\n" + stripClixml(r.stderr) : "")).trim();
+        if (info) setRaw(info);
       }
     } catch (e) { setErr((e as Error).message || String(e)); }
     setLoading(false);
@@ -103,10 +106,29 @@ export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
   }
 
   function newFile() {
-    const name = prompt("Имя нового файла (например notes.txt):");
+    const name = prompt("Имя файла с любым расширением\n(app.js, Program.cs, index.html, style.css, main.py, config.json…):");
     if (!name || !name.trim()) return;
     setEditErr(null);
     setEditing({ name: name.trim(), path: join(os, path, name.trim()), content: "", dirty: true, isNew: true });
+  }
+
+  // Windows: заворачиваем PS-операцию в try/catch, чтобы поймать реальную ошибку
+  // (например «Отказано в доступе»), а не проглотить её тихо.
+  function winMutate(psCmd: string): string {
+    return winCmd(`try { ${psCmd}; 'NDOK' } catch { Write-Output ('NDERR: ' + $_.Exception.Message) }`);
+  }
+
+  // Выполнить изменяющую команду и показать ошибку, если сервер её вернул.
+  async function runMutation(cmd: string): Promise<boolean> {
+    try {
+      const r = await sshExec(credsOf(server), cmd);
+      const out = stripClixml(r.stdout || "");
+      const errText = (r.stderr || "").trim();
+      const marker = out.match(/NDERR:\s*(.+)/);
+      if (marker) { setErr(marker[1].trim()); return false; }
+      if (os !== "windows" && errText) { setErr(errText); return false; }
+      return true;
+    } catch (er) { setErr((er as Error).message || String(er)); return false; }
   }
 
   async function rename(e: Entry) {
@@ -115,30 +137,27 @@ export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
     const from = join(os, path, e.name);
     const to = join(os, path, next.trim());
     const cmd = os === "windows"
-      ? winCmd(`Move-Item -LiteralPath '${from.replace(/'/g, "''")}' -Destination '${to.replace(/'/g, "''")}' -Force`)
+      ? winMutate(`Move-Item -LiteralPath '${from.replace(/'/g, "''")}' -Destination '${to.replace(/'/g, "''")}' -Force -ErrorAction Stop`)
       : `mv '${from.replace(/'/g, "")}' '${to.replace(/'/g, "")}'`;
-    try { await sshExec(credsOf(server), cmd); load(); }
-    catch (er) { setErr((er as Error).message || String(er)); }
+    if (await runMutation(cmd)) load();
   }
 
   async function del(e: Entry) {
     const full = join(os, path, e.name);
     if (!confirm(`Удалить «${e.name}»?`)) return;
     const cmd = os === "windows"
-      ? winCmd(`Remove-Item -LiteralPath '${full.replace(/'/g, "''")}' -Recurse -Force`)
+      ? winMutate(`Remove-Item -LiteralPath '${full.replace(/'/g, "''")}' -Recurse -Force -ErrorAction Stop`)
       : `rm -rf '${full.replace(/'/g, "")}'`;
-    try { await sshExec(credsOf(server), cmd); load(); }
-    catch (er) { setErr((er as Error).message || String(er)); }
+    if (await runMutation(cmd)) load();
   }
 
   async function mkdir() {
     if (!newDir.trim()) return;
     const full = join(os, path, newDir.trim());
     const cmd = os === "windows"
-      ? winCmd(`New-Item -ItemType Directory -Force -Path '${full.replace(/'/g, "''")}'`)
-      : `mkdir -p '${full.replace(/'/g, "")}'`;
-    try { await sshExec(credsOf(server), cmd); setNewDir(""); load(); }
-    catch (er) { setErr((er as Error).message || String(er)); }
+      ? winMutate(`New-Item -ItemType Directory -Force -Path '${full.replace(/'/g, "''")}' -ErrorAction Stop | Out-Null`)
+      : `mkdir -p '${full.replace(/'/g, "")}' 2>&1`;
+    if (await runMutation(cmd)) { setNewDir(""); load(); }
   }
 
   function closeEditor() {
@@ -176,7 +195,13 @@ export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
               <button className="row-del" title="Удалить" onClick={() => del(e)}><IconTrash size={15} /></button>
             </div>
           ))}
-          {entries.length === 0 && <div className="empty-block"><p>Папка пуста.</p></div>}
+          {entries.length === 0 && !raw && <div className="empty-block"><p>Папка пуста.</p></div>}
+          {entries.length === 0 && raw && (
+            <div className="empty-block">
+              <p>Список пуст. Ответ сервера:</p>
+              <code style={{ whiteSpace: "pre-wrap", textAlign: "left", maxWidth: 560 }}>{raw.slice(0, 500)}</code>
+            </div>
+          )}
         </div>
       )}
 
