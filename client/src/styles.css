@@ -19,14 +19,15 @@
   --glass-bg:     rgba(255,255,255,0.04);
   --glass-border: rgba(255,255,255,0.10);
   --glass-blur:   blur(16px);
-  --radius-card:  22px;
-  --font-ui: "Unbounded", "Inter", system-ui, -apple-system, sans-serif;
+  --radius-card:  20px;
+  /* Заголовки — Unbounded (фирменный), интерфейс — Inter (читаемость). */
+  --font-ui: "Inter", system-ui, -apple-system, sans-serif;
   --font-display: "Unbounded", "Inter", sans-serif;
   --font-mono: "Cascadia Code", "JetBrains Mono", ui-monospace, Consolas, monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; overflow: hidden; }
-body { font-family: var(--font-ui); font-size: 12.5px; font-weight: 400; letter-spacing: -.01em; color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; user-select: none; }
+body { font-family: var(--font-ui); font-size: 13px; font-weight: 450; letter-spacing: 0; color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; user-select: none; }
 button { font-family: inherit; font-size: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 input, textarea { font-family: inherit; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -105,10 +106,10 @@ input, textarea { font-family: inherit; }
 .btn:disabled { opacity: .4; cursor: default; }
 /* Ghost — стеклянная iOS-кнопка */
 .btn.ghost { background: var(--glass-bg); color: var(--ink); border: 1px solid var(--glass-border); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-radius: 16px; }
-.btn.ghost:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2); opacity: 1; transform: translateY(-1px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
-.btn.ghost:active { transform: scale(.95); background: rgba(255,255,255,.05); }
+.btn.ghost:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.16); opacity: 1; }
+.btn.ghost:active { transform: scale(.97); background: rgba(255,255,255,.04); }
 .input { background: var(--white); color: var(--ink); border: 1px solid var(--input-border); border-radius: 12px; padding: 12px 14px; width: 100%; outline: none; resize: vertical; transition: border-color .2s, box-shadow .2s; }
-.input:focus { border-color: var(--line-2); box-shadow: 0 0 0 3px rgba(255,255,255,.06); }
+.input:focus { border-color: #3d3d3d; }
 .input:disabled { background: var(--bg-panel); color: var(--muted); }
 .input::placeholder { color: var(--muted-2); }
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
@@ -124,7 +125,7 @@ input, textarea { font-family: inherit; }
 
 .quick-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .quick { text-align: left; background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 4px; transition: border-color .12s, transform .12s; }
-.quick:hover { border-color: var(--ink); transform: translateY(-2px); }
+.quick:hover { border-color: #3d3d3d; transform: translateY(-2px); }
 .quick b { font-size: 15px; }
 .quick span { color: var(--muted); font-size: 12px; }
 
@@ -208,7 +209,7 @@ input, textarea { font-family: inherit; }
 
 .snip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-bottom: 16px; }
 .snip-btn { text-align: left; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); font-weight: 600; }
-.snip-btn:hover:not(:disabled) { border-color: var(--ink); }
+.snip-btn:hover:not(:disabled) { border-color: #3d3d3d; background: var(--bg-hover); }
 .snip-btn:disabled { opacity: .5; }
 .snip-custom { display: flex; gap: 10px; margin-bottom: 8px; }
 .snip-output { background: #050505; color: #eaeaea; border: 1px solid var(--line); padding: 14px; border-radius: 10px; font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; overflow-x: auto; max-height: 460px; overflow-y: auto; }
@@ -328,10 +329,10 @@ input, textarea { font-family: inherit; }
 .nav-item { transition: background .2s ease, color .2s ease, transform .2s ease; }
 .nav-item:hover { transform: translateX(3px); }
 .btn { transition: transform .2s ease, opacity .2s ease, box-shadow .2s ease, background .2s ease; }
-.btn:not(.ghost):hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.4); }
-.btn:active { transform: scale(.96); }
-.stat-card, .card-block, .price-card, .team-pill, .snip-btn, .quick { transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease, background .25s ease; }
-.stat-card:hover { border-color: var(--line-2); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.35); }
+.btn:not(.ghost):hover { transform: translateY(-1px); }
+.btn:active { transform: scale(.97); }
+.stat-card, .card-block, .price-card, .team-pill, .snip-btn, .quick { transition: border-color .25s ease, transform .25s ease, background .25s ease; }
+.stat-card:hover { border-color: var(--line-2); transform: translateY(-2px); }
 .server-row { transition: background .2s ease, transform .2s ease; }
 .server-row:hover { transform: translateX(3px); }
 .metric-card, .mini-row, .file-row, .svc-row, .proc-table tr { transition: background .2s ease; }
@@ -354,8 +355,8 @@ input, textarea { font-family: inherit; }
 
 /* Стеклянные кнопки входа Google/Discord */
 .oauth-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); color: var(--ink); transition: transform .25s cubic-bezier(.4,0,.2,1), background .25s, border-color .25s; }
-.oauth-btn:hover:not(:disabled) { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2); transform: translateY(-1px); }
-.oauth-btn:active:not(:disabled) { transform: scale(.97); }
+.oauth-btn:hover:not(:disabled) { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.16); }
+.oauth-btn:active:not(:disabled) { transform: scale(.98); }
 
 /* Утилиты из присланного CSS */
 .glass-item { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0,0,0,.4); }
