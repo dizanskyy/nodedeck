@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Server } from "../../../store";
-import { sshExec, credsOf, winCmd, type OsKind } from "../../../lib/ssh";
+import { sshExec, credsOf, winCmd, readFileText, writeFileText, type OsKind } from "../../../lib/ssh";
 import { IconRefresh, IconTrash, IconPlus } from "../../icons";
 
 interface Entry { name: string; dir: boolean; size: number }
@@ -50,12 +50,16 @@ const fmtSize = (n: number) => {
   return `${n.toFixed(i ? 1 : 0)} ${u[i]}`;
 };
 
+interface Editing { name: string; path: string; content: string; dirty: boolean; isNew: boolean }
+
 export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
   const [path, setPath] = useState(os === "windows" ? "C:\\" : "/");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [viewing, setViewing] = useState<{ name: string; content: string } | null>(null);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [editErr, setEditErr] = useState<string | null>(null);
   const [newDir, setNewDir] = useState("");
 
   async function load(p = path) {
@@ -76,13 +80,45 @@ export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
   async function openEntry(e: Entry) {
     if (e.dir) { setPath(join(os, path, e.name)); return; }
     const full = join(os, path, e.name);
-    const cmd = os === "windows"
-      ? winCmd(`Get-Content -LiteralPath '${full.replace(/'/g, "''")}' -TotalCount 500 | Out-String`)
-      : `head -c 65536 '${full.replace(/'/g, "")}'`;
+    setEditErr(null);
+    setEditing({ name: e.name, path: full, content: "Загрузка…", dirty: false, isNew: false });
     try {
-      const r = await sshExec(credsOf(server), cmd);
-      setViewing({ name: e.name, content: r.stdout || r.stderr || "(пусто)" });
-    } catch (er) { setViewing({ name: e.name, content: "Ошибка: " + ((er as Error).message || String(er)) }); }
+      const content = await readFileText(credsOf(server), os, full);
+      setEditing({ name: e.name, path: full, content, dirty: false, isNew: false });
+    } catch (er) {
+      setEditErr((er as Error).message || String(er));
+      setEditing({ name: e.name, path: full, content: "", dirty: false, isNew: false });
+    }
+  }
+
+  async function save() {
+    if (!editing) return;
+    setSaving(true); setEditErr(null);
+    try {
+      await writeFileText(credsOf(server), os, editing.path, editing.content);
+      setEditing({ ...editing, dirty: false, isNew: false });
+      load();
+    } catch (er) { setEditErr((er as Error).message || String(er)); }
+    setSaving(false);
+  }
+
+  function newFile() {
+    const name = prompt("Имя нового файла (например notes.txt):");
+    if (!name || !name.trim()) return;
+    setEditErr(null);
+    setEditing({ name: name.trim(), path: join(os, path, name.trim()), content: "", dirty: true, isNew: true });
+  }
+
+  async function rename(e: Entry) {
+    const next = prompt(`Новое имя для «${e.name}»:`, e.name);
+    if (!next || !next.trim() || next === e.name) return;
+    const from = join(os, path, e.name);
+    const to = join(os, path, next.trim());
+    const cmd = os === "windows"
+      ? winCmd(`Move-Item -LiteralPath '${from.replace(/'/g, "''")}' -Destination '${to.replace(/'/g, "''")}' -Force`)
+      : `mv '${from.replace(/'/g, "")}' '${to.replace(/'/g, "")}'`;
+    try { await sshExec(credsOf(server), cmd); load(); }
+    catch (er) { setErr((er as Error).message || String(er)); }
   }
 
   async function del(e: Entry) {
@@ -105,6 +141,11 @@ export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
     catch (er) { setErr((er as Error).message || String(er)); }
   }
 
+  function closeEditor() {
+    if (editing?.dirty && !confirm("Есть несохранённые изменения. Закрыть без сохранения?")) return;
+    setEditing(null); setEditErr(null);
+  }
+
   return (
     <div className="detail-body">
       <div className="panel-head">
@@ -118,6 +159,7 @@ export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
         <input className="input" placeholder="имя новой папки" value={newDir}
                onChange={(e) => setNewDir(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") mkdir(); }} />
         <button className="btn ghost" onClick={mkdir}><IconPlus size={15} /> Папка</button>
+        <button className="btn ghost" onClick={newFile}><IconPlus size={15} /> Файл</button>
       </div>
 
       {loading && <div className="empty-block"><p>Загрузка…</p></div>}
@@ -130,6 +172,7 @@ export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
               <span className="file-ico">{e.dir ? "📁" : "📄"}</span>
               <button className="file-name" onClick={() => openEntry(e)}>{e.name}</button>
               <span className="file-size">{fmtSize(e.size)}</span>
+              <button className="row-act" title="Переименовать" onClick={() => rename(e)}>✎</button>
               <button className="row-del" title="Удалить" onClick={() => del(e)}><IconTrash size={15} /></button>
             </div>
           ))}
@@ -137,12 +180,25 @@ export function FilesPanel({ server, os }: { server: Server; os: OsKind }) {
         </div>
       )}
 
-      {viewing && (
-        <div className="modal-overlay" onClick={() => setViewing(null)}>
-          <div className="modal" style={{ width: 640 }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">{viewing.name}</div>
-            <div className="modal-body"><pre className="snip-output" style={{ maxHeight: "60vh" }}>{viewing.content}</pre></div>
-            <div className="modal-footer"><button className="btn ghost" onClick={() => setViewing(null)}>Закрыть</button></div>
+      {editing && (
+        <div className="modal-overlay" onClick={closeEditor}>
+          <div className="modal editor-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              {editing.isNew ? "Новый файл: " : "Редактирование: "}{editing.name}
+              {editing.dirty && <span className="editor-dirty"> • не сохранено</span>}
+            </div>
+            <div className="modal-body">
+              <textarea className="editor-area" value={editing.content} spellCheck={false}
+                        onChange={(e) => setEditing({ ...editing, content: e.target.value, dirty: true })} />
+              <div className="editor-path">{editing.path}</div>
+              {editErr && <div className="auth-error">{editErr}</div>}
+            </div>
+            <div className="modal-footer">
+              <button className="btn ghost" onClick={closeEditor}>Закрыть</button>
+              <button className="btn" disabled={saving || !editing.dirty} onClick={save}>
+                {saving ? "Сохранение…" : "Сохранить"}
+              </button>
+            </div>
           </div>
         </div>
       )}

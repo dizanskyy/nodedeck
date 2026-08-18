@@ -178,6 +178,36 @@ export function winCmd(script: string): string {
   return `powershell -NoProfile -EncodedCommand ${psEncode(script)}`;
 }
 
+// base64 <-> строка с корректной обработкой UTF-8.
+export function b64EncodeUtf8(s: string): string {
+  return btoa(unescape(encodeURIComponent(s)));
+}
+export function b64DecodeUtf8(b: string): string {
+  try { return decodeURIComponent(escape(atob(b.replace(/\s+/g, "")))); }
+  catch { return atob(b.replace(/\s+/g, "")); }
+}
+
+// Прочитать текстовый файл с хоста (через base64 — сохраняет кодировку).
+export async function readFileText(creds: SshCreds, os: OsKind, path: string): Promise<string> {
+  const cmd = os === "windows"
+    ? winCmd(`[Convert]::ToBase64String([IO.File]::ReadAllBytes('${path.replace(/'/g, "''")}'))`)
+    : `base64 '${path.replace(/'/g, "")}'`;
+  const r = await sshExec(creds, cmd);
+  const out = (r.stdout || "").trim();
+  if (!out && r.stderr) throw new Error(r.stderr.trim());
+  return b64DecodeUtf8(out);
+}
+
+// Записать текст в файл на хосте (перезаписывает).
+export async function writeFileText(creds: SshCreds, os: OsKind, path: string, content: string): Promise<void> {
+  const b64 = b64EncodeUtf8(content);
+  const cmd = os === "windows"
+    ? winCmd(`[IO.File]::WriteAllBytes('${path.replace(/'/g, "''")}',[Convert]::FromBase64String('${b64}'))`)
+    : `printf '%s' '${b64}' | base64 -d > '${path.replace(/'/g, "")}'`;
+  const r = await sshExec(creds, cmd);
+  if (r.exit_code !== 0 && r.stderr) throw new Error(r.stderr.trim());
+}
+
 export function credsOf(s: { host: string; port: number; username: string; authKind: "password" | "key"; password?: string; privateKey?: string }): SshCreds {
   return {
     host: s.host, port: s.port, username: s.username,
